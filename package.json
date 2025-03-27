@@ -1,0 +1,13 @@
+{
+    "name": "server-info-app",
+    "version": "1.0.0",
+    "description": "Simple web app displaying server information",
+    "main": "index.js",
+    "scripts": {
+      "start": "node index.js"
+    },
+    "dependencies": {
+      "express": "^4.18.2",
+      "os": "^0.1.2"
+    }
+  }
