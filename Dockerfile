@@ -1,15 +1,22 @@
-# Etap pierwszy - budowanie aplikacji
+# syntax=docker/dockerfile:1.3-labs
+FROM alpine as downloader
+RUN apk add --no-cache git openssh
+COPY known_hosts /etc/ssh/ssh_known_hosts
+RUN --mount=type=ssh git clone git@github.com:JacKoz7/pawcho6.git /app
+
+# Etap 2 - build Node.js z pobranym kodem
 FROM node:alpine AS build
 WORKDIR /app
-COPY package*.json ./
+COPY --from=downloader /app/package*.json ./
 RUN npm install
-COPY index.js .
+COPY --from=downloader /app/index.js .
 ARG VERSION=1.0.0
 ENV VERSION=${VERSION}
 
-# Etap drugi - serwer Nginx
+# Etap 3 - nginx + frontend
 FROM nginx:alpine
 COPY --from=build /app /usr/share/nginx/html
+
 COPY <<EOF /usr/share/nginx/html/index.html
 <!DOCTYPE html>
 <html>
@@ -28,21 +35,16 @@ COPY <<EOF /usr/share/nginx/html/index.html
 </html>
 EOF
 
-# Instalacja Node.js w obrazie Nginx
 RUN apk add --no-cache nodejs npm
 WORKDIR /usr/share/nginx/html
 RUN npm install express os
 
-# Kopiowanie plików Node.js
 COPY --from=build /app/index.js .
 COPY --from=build /app/package*.json ./
 
-# Expose port
 EXPOSE 3000 80
 
-# Healthcheck
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
   CMD curl -f http://localhost:3000 || exit 1
 
-# Uruchomienie Node.js i Nginx
 CMD sh -c "node index.js & nginx -g 'daemon off;'"
