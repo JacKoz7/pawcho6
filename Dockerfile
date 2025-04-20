@@ -3,7 +3,7 @@ FROM alpine AS downloader
 RUN apk add --no-cache git openssh
 COPY known_hosts /etc/ssh/ssh_known_hosts
 RUN --mount=type=ssh git clone git@github.com:JacKoz7/pawcho6.git /app
-RUN ls -la /app  # Dodaj tę linię, aby zobaczyć zawartość
+RUN ls -la /app && find /app -type f | sort
 
 # Etap 2 - build Node.js z pobranym kodem
 FROM node:20-alpine AS build
