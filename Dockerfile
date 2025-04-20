@@ -1,11 +1,11 @@
 # syntax=docker/dockerfile:1.3-labs
-FROM alpine as downloader
+FROM alpine AS downloader
 RUN apk add --no-cache git openssh
 COPY known_hosts /etc/ssh/ssh_known_hosts
 RUN --mount=type=ssh git clone git@github.com:JacKoz7/pawcho6.git /app
 
 # Etap 2 - build Node.js z pobranym kodem
-FROM node:alpine AS build
+FROM node:20-alpine AS build
 WORKDIR /app
 COPY --from=downloader /app/package*.json ./
 RUN npm install
@@ -47,4 +47,12 @@ EXPOSE 3000 80
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
   CMD curl -f http://localhost:3000 || exit 1
 
-CMD sh -c "node index.js & nginx -g 'daemon off;'"
+# Startup script for multiple processes
+COPY <<EOF /start.sh
+#!/bin/sh
+node /usr/share/nginx/html/index.js &
+nginx -g 'daemon off;'
+EOF
+RUN chmod +x /start.sh
+
+CMD ["/start.sh"]
